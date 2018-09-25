@@ -21,14 +21,37 @@ defmodule Cons do
   end
 
   def get_profile(counts) do
-    counts
-      |> Enum.map(fn group -> Map.values(group) end)
-      |> List.zip()
+    profile = get_profile(counts, %{"A"=>[], "C"=>[], "G"=>[], "T"=>[]})
+    for {k, v} <- profile, into: %{}, do: {k, Enum.reverse(v)}
+  end
+
+  defp get_profile(counts, profile) when length(counts) > 0 do
+    [group|rest] = counts
+    profile = Map.merge(group, profile, fn _k, v, list ->
+      [v| list]
+    end)
+    get_profile(rest, profile)
+  end
+
+  defp get_profile(_counts, profile) do
+    profile
+  end
+
+  def print_profile(profile) do
+    profile
+      |> Enum.map(fn {k, v} -> {k, Enum.join(v, " ")} end)
+      |> Enum.map(fn {k, v} -> IO.puts "#{k}: #{v}" end)   
   end
 
   def get_consensus(counts) do
     counts
-      |> Enum.map(fn group -> group end)
+      |> Enum.map(fn group -> get_consensus_nuc(group) end)
+      |> Enum.map(fn {nuc, _} -> nuc end)
+      |> Enum.join("")
+  end
+
+  def get_consensus_nuc(group) do
+    Enum.max_by(group, fn {_, v} -> v end)
   end
 
   def calc_nuc_counts(group) do
@@ -61,11 +84,10 @@ defmodule Cons do
   def process(options) do
     {:ok, line} = File.read(options[:filename])
     {:ok, pattern} = Regex.compile("(\n)?>Rosalind_[0-9]+\n")
-    strands = for l <- String.split(line, pattern), l != "", do: l
+    strands = for l <- String.split(String.trim(line), pattern), l != "", do: String.replace(l, "\n", "")
     counts = get_counts(strands)
     profile = get_profile(counts)
-    IO.inspect counts
-    IO.inspect profile
-    IO.inspect get_consensus(counts)
+    IO.puts get_consensus(counts)
+    print_profile(profile)
   end
 end
