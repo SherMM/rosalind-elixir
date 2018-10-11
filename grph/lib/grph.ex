@@ -12,36 +12,15 @@ defmodule Graph do
       :world
 
   """
-  def generate_edges(u, vertexes) do
-    vertexes
-      |> Enum.map(fn v -> {v, u} end)
-      |> Enum.filter(fn {v, u} -> v != u end)
-  end
-
-  def build_graph(strands) do
-    product = for {n1, s1} <- strands, {n2, s2} <- strands, do: {n1, n2, s1, s2}
+  def build_graph(strands, k) do
+    product = for {n1, s1} <- strands, {n2, s2} <- strands, 
+      do: {n1, n2, s1, s2}
     product
-      |> Enum.filter(fn {n1, n2, _, _} -> n1 != n2 end)
-      |> Enum.fitler(fn {_, _, s1, s2} ->)
-  end
-
-  def filter_duplicate_edges(edges) do
-    filter_duplicate_edges(edges, MapSet.new())
-  end
-
-  def filter_duplicate_edges(edges, seen) when length(edges) != 0 do
-    [{head, tail}| rest] = edges
-    seen = 
-    if not MapSet.member?(seen, {tail, head}) do
-      MapSet.put(seen, {head, tail})
-    else
-      seen
-    end
-    filter_duplicate_edges(rest, seen)
-  end
-
-  def filter_duplicate_edges(_edges, seen) do
-    seen
+      |> Enum.filter(fn {_, _, s1, s2} -> s1 != s2 end)
+      |> Enum.filter(fn {_, _, s1, s2} ->
+          String.slice(s1, -k, k) == String.slice(s2, 0, k)
+      end)
+      |> Enum.map(fn {n1, n2, _, _} -> {n1, n2} end)
   end
 
   def parse_codes_and_strands(lines) do
