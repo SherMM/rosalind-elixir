@@ -12,27 +12,52 @@ defmodule Graph do
       :world
 
   """
-  def generate_edges(vertex, vertexes) do
+  def generate_edges(u, u_strand, vertexes) do
     vertexes
-      |> Enum.map(fn v -> {vertex, v} end)
+      |> Enum.map(fn {v, v_strand} -> {{u, v}, {u_strand, v_strand}} end)
+      |> Enum.filter(fn {{_, _}, {s1, s2}} -> s1 != s2 end)
+      |> Enum.map(fn {{name1, name2}, {_, _}} -> {name1, name2} end)
   end
 
   def build_graph(strands, k) do
-    build_graph(strands, k, %{})
+    build_graph(strands, k, %{}, %{}, [])
   end
 
-  def build_graph(strands, k, graph) when length(strands) != 0 do
+  def build_graph(strands, k, heads, tails, edges) when length(strands) != 0 do
     [{name, strand}| rest] = strands
     head = String.slice(strand, 0, k)
     tail = String.slice(strand, -k, k)
-    graph = Map.put_new(graph, head, [name])
-    graph = Map.put_new(graph, tail, [name])
-    edges = generate_edges(name, graph[head])
-    build_graph(rest, k, %{graph| head => edges ++ graph[head]})
+    heads = Map.put_new(heads, head, [])
+    tails = Map.put_new(tails, tail, [])
+
+    edges = edges ++ generate_edges(name, strand, Map.get(heads, tail, []))
+    edges = edges ++ generate_edges(name, strand, Map.get(tails, head, []))
+    heads = %{heads| head => [{name, strand}] ++ heads[head]}
+    tails = %{tails| tail => [{name, strand}] ++ tails[tail]}
+    build_graph(rest, k, heads, tails, edges)
   end
 
-  def build_graph(_strands, _k, graph) do
-    graph
+  def build_graph(_strands, _k, _heads, _tails, edges) do
+    edges
+  end
+
+  def filter_duplicate_edges(edges) do
+    filter_duplicate_edges(edges, MapSet.new())
+  end
+
+  def filter_duplicate_edges(edges, seen) when length(edges) != 0 do
+    [{head, tail}| rest] = edges
+    seen = 
+    if not MapSet.member?(seen, {tail, head}) do
+      MapSet.put(seen, {head, tail})
+    else
+      seen
+    end
+    filter_duplicate_edges(rest, seen)
+  end
+
+  def filter_duplicate_edges(_edges, seen) do
+    seen
   end
 
   def parse_codes_and_strands(lines) do
@@ -76,6 +101,10 @@ defmodule Graph do
     k = 3
     lines = read_lines(options[:filename])
     strands = parse_codes_and_strands(lines)
-    IO.inspect build_graph(strands, k)
+    edges = build_graph(strands, k)
+    connected = filter_duplicate_edges(edges)
+    Enum.each(connected, fn {x, y} ->
+      IO.puts "#{x} #{y}"
+    end)
   end
 end
