@@ -1,6 +1,3 @@
-import Node
-import DiGraph
-
 defmodule Graph do
   @moduledoc """
   Documentation for Graph.
@@ -15,20 +12,23 @@ defmodule Graph do
       :world
 
   """
+  def generate_edges(vertex, vertexes) do
+    vertexes
+      |> Enum.map(fn v -> {vertex, v} end)
+  end
+
   def build_graph(strands, k) do
-    build_graph(strands, k, %DiGraph{})
+    build_graph(strands, k, %{})
   end
 
   def build_graph(strands, k, graph) when length(strands) != 0 do
     [{name, strand}| rest] = strands
     head = String.slice(strand, 0, k)
     tail = String.slice(strand, -k, k)
-    vertex = %Node{
-      name: name,
-      head: head,
-      tail: tail
-    }
-    build_graph(rest, k, graph)
+    graph = Map.put_new(graph, head, [name])
+    graph = Map.put_new(graph, tail, [name])
+    edges = generate_edges(name, graph[head])
+    build_graph(rest, k, %{graph| head => edges ++ graph[head]})
   end
 
   def build_graph(_strands, _k, graph) do
@@ -76,7 +76,6 @@ defmodule Graph do
     k = 3
     lines = read_lines(options[:filename])
     strands = parse_codes_and_strands(lines)
-    IO.inspect strands
     IO.inspect build_graph(strands, k)
   end
 end
