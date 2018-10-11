@@ -18,26 +18,11 @@ defmodule Graph do
       |> Enum.filter(fn {v, u} -> v != u end)
   end
 
-  def build_graph(strands, k) do
-    build_graph(strands, k, %{}, %{}, [])
-  end
-
-  def build_graph(strands, k, heads, tails, edges) when length(strands) != 0 do
-    [{name, strand}| rest] = strands
-    head = String.slice(strand, 0, k)
-    tail = String.slice(strand, -k, k)
-    heads = Map.put_new(heads, head, [])
-    tails = Map.put_new(tails, tail, [])
-
-    edges = edges ++ generate_edges(name, Map.get(heads, tail, []))
-    edges = edges ++ generate_edges(name, Map.get(tails, head, []))
-    heads = %{heads| head => [name] ++ heads[head]}
-    tails = %{tails| tail => [name] ++ tails[tail]}
-    build_graph(rest, k, heads, tails, edges)
-  end
-
-  def build_graph(_strands, _k, _heads, _tails, edges) do
-    edges
+  def build_graph(strands) do
+    product = for {n1, s1} <- strands, {n2, s2} <- strands, do: {n1, n2, s1, s2}
+    product
+      |> Enum.filter(fn {n1, n2, _, _} -> n1 != n2 end)
+      |> Enum.fitler(fn {_, _, s1, s2} ->)
   end
 
   def filter_duplicate_edges(edges) do
