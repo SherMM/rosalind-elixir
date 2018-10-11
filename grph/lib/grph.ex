@@ -12,11 +12,10 @@ defmodule Graph do
       :world
 
   """
-  def generate_edges(u, u_strand, vertexes) do
+  def generate_edges(u, vertexes) do
     vertexes
-      |> Enum.map(fn {v, v_strand} -> {{u, v}, {u_strand, v_strand}} end)
-      |> Enum.filter(fn {{_, _}, {s1, s2}} -> s1 != s2 end)
-      |> Enum.map(fn {{name1, name2}, {_, _}} -> {name1, name2} end)
+      |> Enum.map(fn v -> {v, u} end)
+      |> Enum.filter(fn {v, u} -> v != u end)
   end
 
   def build_graph(strands, k) do
@@ -30,10 +29,10 @@ defmodule Graph do
     heads = Map.put_new(heads, head, [])
     tails = Map.put_new(tails, tail, [])
 
-    edges = edges ++ generate_edges(name, strand, Map.get(heads, tail, []))
-    edges = edges ++ generate_edges(name, strand, Map.get(tails, head, []))
-    heads = %{heads| head => [{name, strand}] ++ heads[head]}
-    tails = %{tails| tail => [{name, strand}] ++ tails[tail]}
+    edges = edges ++ generate_edges(name, Map.get(heads, tail, []))
+    edges = edges ++ generate_edges(name, Map.get(tails, head, []))
+    heads = %{heads| head => [name] ++ heads[head]}
+    tails = %{tails| tail => [name] ++ tails[tail]}
     build_graph(rest, k, heads, tails, edges)
   end
 
@@ -102,8 +101,7 @@ defmodule Graph do
     lines = read_lines(options[:filename])
     strands = parse_codes_and_strands(lines)
     edges = build_graph(strands, k)
-    connected = filter_duplicate_edges(edges)
-    Enum.each(connected, fn {x, y} ->
+    Enum.each(edges, fn {x, y} ->
       IO.puts "#{x} #{y}"
     end)
   end
