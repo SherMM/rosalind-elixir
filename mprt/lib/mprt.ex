@@ -6,7 +6,6 @@ defmodule Mprt do
         |> url_for()
         |> HTTPoison.get()
         |> parse_response()
-    IO.inspect protein 
     {id, protein}
   end
 
@@ -17,8 +16,6 @@ defmodule Mprt do
 
   def find_matches(strand, regex, i, j, k, positions) when i < k do
     sub = String.slice(strand, i, j)
-    IO.inspect sub
-    IO.inspect k
     has_match = Regex.match?(regex, sub)
     positions = 
       if has_match do
