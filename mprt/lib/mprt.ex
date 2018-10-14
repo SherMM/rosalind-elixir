@@ -1,12 +1,26 @@
 defmodule Mprt do
+  use Tesla 
+
+  plug Tesla.Middleware.JSON
   
-  def protein_for(id) do
+  def find_motif_matches_for(id) do
+    # get primary id code, otherwise redirects
+    # for http request won't work, haven't gotten
+    # tesla allow redirects to work yet
+    [primary_id| _] = String.split(id, "_")
     protein = 
-      id
+      primary_id
         |> url_for()
-        |> HTTPoison.get()
+        |> Tesla.get()
         |> parse_response()
-    {id, protein}
+    matches = find_matches(protein)
+    if length(matches) != 0 do
+      IO.puts id
+      IO.puts Enum.join(
+        Enum.map(matches, fn match ->
+          Integer.to_string(match) end),
+        " ")
+    end
   end
 
   def find_matches(strand) do
@@ -35,8 +49,8 @@ defmodule Mprt do
     "https://www.uniprot.org/uniprot/#{id}.fasta"
   end
 
-  def parse_response(response) do
-    {_, %HTTPoison.Response{body: body, status_code: 200}} = response
+  def parse_response({:ok, response}) do
+    body = response.body
     String.split(body, "\n")
       |> Enum.filter(fn line -> 
         not String.starts_with?(line, ">") 
